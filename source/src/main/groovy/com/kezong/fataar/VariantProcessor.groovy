@@ -39,6 +39,8 @@ class VariantProcessor {
 
     private TaskProvider mMergeClassTask
 
+    private Set<String> mMainStringNameSet
+
     VariantProcessor(Project project, LibraryVariant variant) {
         mProject = project
         mVariant = variant
@@ -264,6 +266,25 @@ class VariantProcessor {
         if (artifacts == null) {
             return
         }
+
+        // 遍历主目录下的String.xml文件
+        mMainStringNameSet=new HashSet<>()
+        String mainStringsPath = mProject.projectDir.path+"/src/main/res/values/strings.xml"
+        Node node = new XmlParser().parse(mainStringsPath)
+        if(node){
+            NodeList string_node = (NodeList) node.get("string")
+            if (string_node) {
+                string_node.each {
+                    Node childNode = (Node) it
+                    mMainStringNameSet.add(childNode.attribute("name"))
+                }
+            }
+        }
+
+//        mMainStringNameSet.add("app_name_aar2")
+//        mMainStringNameSet.add("app_name_aar_local")
+
+
         for (final ResolvedArtifact artifact in artifacts) {
             if (FatAarPlugin.ARTIFACT_TYPE_JAR == artifact.type) {
                 addJarFile(artifact.file)
@@ -295,6 +316,10 @@ class VariantProcessor {
                     doFirst {
                         // Delete previously extracted data.
                         zipFolder.deleteDir()
+                    }
+
+                    doLast {
+                        DuplicateResUtils.deleteAppNameAttribute(mMainStringNameSet, archiveLibrary.resFolder.path)
                     }
                 }
 
