@@ -240,8 +240,10 @@ AAR是Android提供的一种官方文件形式；
 ## 致谢
 * [android-fat-aar][1]
 * [fat-aar-plugin][4]
+* [cpdroid/fat-aar][5]
 
 [1]: https://github.com/adwiv/android-fat-aar
 [2]: https://developer.android.com/studio/projects/android-library.html#aar-contents
 [3]: https://developer.android.com/studio/releases/gradle-plugin.html
 [4]: https://github.com/Vigi0303/fat-aar-plugin
+[5]: https://github.com/cpdroid/fat-aar
