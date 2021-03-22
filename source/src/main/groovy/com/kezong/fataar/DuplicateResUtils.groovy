@@ -20,6 +20,10 @@ import static org.objectweb.asm.Opcodes.*
 @CompileStatic
 class DuplicateResUtils {
 
+    public static String NODE_TYPE_STRING = "string";
+    public static String NODE_TYPE_COLOR = "color";
+
+
     static def logLevel1(Object value) {
         println ">> " + value
     }
@@ -29,10 +33,10 @@ class DuplicateResUtils {
     }
 
     /**
-     * Delete app_name attribute from values.xml
+     * Delete attribute from values.xml
      * @param aarPath The root directory
      */
-    static void deleteAppNameAttribute(Set<String> mainStringNameSet, String aarPath) {
+    static void deleteResAttribute(String aarPath, Set<String> stringSet, Set<String> colorSet) {
         File[] files = new File(aarPath).listFiles()
         if (files == null) return
 
@@ -60,24 +64,9 @@ class DuplicateResUtils {
                 }
 
                 Node node = new XmlParser().parse(maybeResourceFile)
-                NodeList string_node = (NodeList) node.get("string")
-
                 int removeCount = 0
-
-                if (string_node) {
-                    string_node.each {
-                        Node childNode = (Node) it
-                        if (mainStringNameSet.contains(childNode.attribute("name"))) {
-                            node.remove(childNode)
-                            removeCount++
-                        }
-//                        if (childNode.attribute("name") in mainStringNameList) {
-//                            logLevel2 "Found value [app_name] in [" + maybeResourceFile.getAbsolutePath() + "]"
-//                            node.remove(childNode)
-//                            removeCount++
-//                        }
-                    }
-                }
+                removeCount += compareAndDeleteNode(node, (NodeList) node.get(NODE_TYPE_STRING), stringSet)
+                removeCount += compareAndDeleteNode(node, (NodeList) node.get(NODE_TYPE_COLOR), colorSet)
 
                 if (removeCount > 0) {
                     logLevel2 "Delete " + removeCount + " values..."
@@ -85,6 +74,28 @@ class DuplicateResUtils {
                 }
             }
         }
+    }
+
+    /**
+     * 比较节点，并删除重复的节点
+     * @param wholeNode 所有节点
+     * @param nodeList 制定比较的节点列表
+     * @param set 比较的参照集合
+     * @return 删除的节点数量
+     */
+    private static int compareAndDeleteNode(Node wholeNode, NodeList nodeList, Set<String> set) {
+        if (!nodeList) {
+            return 0
+        }
+        int removeCount;
+        nodeList.each {
+            Node childNode = (Node) it
+            if (childNode != null && set.contains(childNode.attribute("name"))) {
+                wholeNode.remove(childNode)
+                removeCount += 1
+            }
+        }
+        return removeCount
     }
 
     static int compareAndroidGradleVersion(String v1, String v2) {

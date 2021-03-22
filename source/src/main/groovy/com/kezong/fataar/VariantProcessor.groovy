@@ -39,7 +39,12 @@ class VariantProcessor {
 
     private TaskProvider mMergeClassTask
 
-    private Set<String> mMainStringNameSet
+    private Set<String> mMainStringNameSet = new HashSet<>()
+    private Set<String> mMainColorsNameSet = new HashSet<>()
+    private Set<String> mMainDimensNameSet = new HashSet<>()
+    private Set<String> mMainStylesNameSet = new HashSet<>()
+    private Set<String> mMainArraysNameSet = new HashSet<>()
+    private Set<String> mMainAttrsNameSet = new HashSet<>()
 
     VariantProcessor(Project project, LibraryVariant variant) {
         mProject = project
@@ -267,23 +272,10 @@ class VariantProcessor {
             return
         }
 
-        // 遍历主目录下的String.xml文件
-        mMainStringNameSet=new HashSet<>()
-        String mainStringsPath = mProject.projectDir.path+"/src/main/res/values/strings.xml"
-        Node node = new XmlParser().parse(mainStringsPath)
-        if(node){
-            NodeList string_node = (NodeList) node.get("string")
-            if (string_node) {
-                string_node.each {
-                    Node childNode = (Node) it
-                    mMainStringNameSet.add(childNode.attribute("name"))
-                }
-            }
-        }
-
-//        mMainStringNameSet.add("app_name_aar2")
-//        mMainStringNameSet.add("app_name_aar_local")
-
+        mMainStringNameSet = new HashSet<>()
+        mMainColorsNameSet = new HashSet<>()
+        iterateMainResFile(mMainStringNameSet,"strings.xml",DuplicateResUtils.NODE_TYPE_STRING)
+        iterateMainResFile(mMainColorsNameSet,"colors.xml",DuplicateResUtils.NODE_TYPE_COLOR)
 
         for (final ResolvedArtifact artifact in artifacts) {
             if (FatAarPlugin.ARTIFACT_TYPE_JAR == artifact.type) {
@@ -319,7 +311,7 @@ class VariantProcessor {
                     }
 
                     doLast {
-                        DuplicateResUtils.deleteAppNameAttribute(mMainStringNameSet, archiveLibrary.resFolder.path)
+                        DuplicateResUtils.deleteResAttribute(archiveLibrary.resFolder.path,mMainStringNameSet,mMainColorsNameSet)
                     }
                 }
 
@@ -334,6 +326,23 @@ class VariantProcessor {
                     dependsOn(explodeTask)
                 }
                 mExplodeTasks.add(explodeTask)
+            }
+        }
+    }
+
+    /**
+     * 遍历主aar的res目录下的文件
+     */
+    private void iterateMainResFile(Set<String> set, String fileName, String nodeType) {
+        String mainStringsPath = mProject.projectDir.path + "/src/main/res/values/" + fileName
+        Node allNode = new XmlParser().parse(mainStringsPath)
+        if (allNode) {
+            NodeList nodeList = (NodeList) allNode.get(nodeType)
+            if (nodeList) {
+                nodeList.each {
+                    Node childNode = (Node) it
+                    set.add(childNode.attribute("name"))
+                }
             }
         }
     }
