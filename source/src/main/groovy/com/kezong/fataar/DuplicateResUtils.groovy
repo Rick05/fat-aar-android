@@ -18,6 +18,7 @@ import static org.objectweb.asm.ClassWriter.COMPUTE_MAXS
 import static org.objectweb.asm.Opcodes.*
 
 @CompileStatic
+@Deprecated
 class DuplicateResUtils {
 
     public static String NODE_TYPE_STRING = "string";

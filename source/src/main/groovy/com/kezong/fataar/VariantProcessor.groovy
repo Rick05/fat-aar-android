@@ -39,12 +39,7 @@ class VariantProcessor {
 
     private TaskProvider mMergeClassTask
 
-    private Set<String> mMainStringNameSet = new HashSet<>()
-    private Set<String> mMainColorsNameSet = new HashSet<>()
-    private Set<String> mMainDimensNameSet = new HashSet<>()
-    private Set<String> mMainStylesNameSet = new HashSet<>()
-    private Set<String> mMainArraysNameSet = new HashSet<>()
-    private Set<String> mMainAttrsNameSet = new HashSet<>()
+    private DuplicateResHandler mDuplicateResHandler
 
     VariantProcessor(Project project, LibraryVariant variant) {
         mProject = project
@@ -272,10 +267,7 @@ class VariantProcessor {
             return
         }
 
-        mMainStringNameSet = new HashSet<>()
-        mMainColorsNameSet = new HashSet<>()
-        iterateMainResFile(mMainStringNameSet,"strings.xml",DuplicateResUtils.NODE_TYPE_STRING)
-        iterateMainResFile(mMainColorsNameSet,"colors.xml",DuplicateResUtils.NODE_TYPE_COLOR)
+        mDuplicateResHandler = new DuplicateResHandler(mProject)
 
         for (final ResolvedArtifact artifact in artifacts) {
             if (FatAarPlugin.ARTIFACT_TYPE_JAR == artifact.type) {
@@ -311,7 +303,9 @@ class VariantProcessor {
                     }
 
                     doLast {
-                        DuplicateResUtils.deleteResAttribute(archiveLibrary.resFolder.path,mMainStringNameSet,mMainColorsNameSet)
+                        if (mDuplicateResHandler != null) {
+                            mDuplicateResHandler.deleteDuplicateRes(archiveLibrary.resFolder.path)
+                        }
                     }
                 }
 
@@ -326,23 +320,6 @@ class VariantProcessor {
                     dependsOn(explodeTask)
                 }
                 mExplodeTasks.add(explodeTask)
-            }
-        }
-    }
-
-    /**
-     * 遍历主aar的res目录下的文件
-     */
-    private void iterateMainResFile(Set<String> set, String fileName, String nodeType) {
-        String mainStringsPath = mProject.projectDir.path + "/src/main/res/values/" + fileName
-        Node allNode = new XmlParser().parse(mainStringsPath)
-        if (allNode) {
-            NodeList nodeList = (NodeList) allNode.get(nodeType)
-            if (nodeList) {
-                nodeList.each {
-                    Node childNode = (Node) it
-                    set.add(childNode.attribute("name"))
-                }
             }
         }
     }

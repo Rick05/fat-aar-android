@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <declare-styleable name="lib_aar_attr1">
+        <attr name="libAarTextColor" format="color" />
+        <attr name="libAarTextSize" format="dimension" />
+    </declare-styleable>
+    <declare-styleable name="lib_aar_attr2">
+        <attr name="libAarTextColor2" format="color" />
+        <attr name="libAarText" format="string" />
+    </declare-styleable>
+</resources>

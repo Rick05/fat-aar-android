@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <style name="lib_aar_style1">
+        <item name="android:text">lib-main</item>
+    </style>
+    <style name="lib_main_style">
+        <item name="android:textColor">#666666</item>
+    </style>
+</resources>
