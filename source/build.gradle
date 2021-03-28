@@ -42,7 +42,7 @@ uploadArchives {
             repository(url: uri('../repositories'))
             pom.groupId = 'com.kezong'
             pom.artifactId = 'fat-aar'
-            pom.version = '2.0.1'
+            pom.version = '2.0.2'
         }
     }
 }

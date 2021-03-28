@@ -71,7 +71,7 @@ class DuplicateResHandler {
      * 初始化
      */
     private void init() {
-//        initMainDirectory()
+        initMainDirectory()
         initMainValuesMap()
         iterateAllFiles(mProject.projectDir.path + "/src/main/res")
     }
@@ -94,13 +94,13 @@ class DuplicateResHandler {
                 // 处理values目录
                 readMainAarValues(file.path)
             } else {
-//                Set<String> fileNameSet = mMainDirectoryMap.get(type)
-//                if (fileNameSet != null) {
-//                    File[] childFiles = file.listFiles()
-//                    childFiles.each { childFile ->
-//                        fileNameSet.add(childFile.name)
-//                    }
-//                }
+                Set<String> fileNameSet = mMainDirectoryMap.get(type)
+                if (fileNameSet != null) {
+                    File[] childFiles = file.listFiles()
+                    childFiles.each { childFile ->
+                        fileNameSet.add(childFile.name)
+                    }
+                }
             }
         }
     }
@@ -197,8 +197,8 @@ class DuplicateResHandler {
             ResourceFolderType folderResourceType = ResourceFolderType.getFolderType(resourceDirectory.getName())
             if (folderResourceType == ResourceFolderType.VALUES) {
                 deleteValuesAttribute(listFiles)
-//            } else {
-//                deleteDuplicateFiles(folderResourceType, listFiles)
+            } else {
+                deleteDuplicateFiles(folderResourceType, listFiles)
             }
         }
     }
@@ -220,16 +220,14 @@ class DuplicateResHandler {
                 continue
             }
 
-            if (!file.isFile()) {
-                throw new ResourceDirectoryParseException(
-                        "${file.absolutePath} is not a file nor directory")
-            }
-
-            for (fileName in mainFileSet) {
-                if (file.name == fileName) {
-                    file.delete()
-                    i--
-                    break
+            // file可能不存在
+            if (file.isFile()) {
+                for (fileName in mainFileSet) {
+                    if (file.name == fileName) {
+                        file.delete()
+                        i--
+                        break
+                    }
                 }
             }
         }
