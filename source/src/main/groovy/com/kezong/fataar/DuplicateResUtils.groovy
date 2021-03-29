@@ -33,6 +33,43 @@ class DuplicateResUtils {
         println "   " + value
     }
 
+    static void deleteDuplicateRes(String aarPath, HashMap<String, HashSet<String>> mainResMap) {
+        XmlParser xmlParser = new XmlParser()
+        for (File resFile : FileUtils.getFileArray(aarPath + File.separator + "values")) {
+            int removeCount = 0;
+            Node allNode = xmlParser.parse(resFile)
+            if (allNode != null) {
+                NodeList nodeList = new NodeList()
+                nodeList.addAll((NodeList)allNode.value())
+                removeCount += compareAndDeleteNode(allNode, nodeList, mainResMap)
+            }
+            if (removeCount > 0) {
+                logLevel2 "Delete " + removeCount + " resources..."
+                Files.asCharSink(resFile, Charsets.UTF_8).write(XmlUtil.serialize(allNode))
+            }
+        }
+    }
+
+    private static int compareAndDeleteNode(Node wholeNode, NodeList nodeList, HashMap<String, HashSet<String>> mainResMap) {
+        if (!nodeList) {
+            return 0
+        }
+        int removeCount = 0
+        nodeList.each {
+            Node childNode = (Node) it
+            if (childNode != null) {
+                HashSet<String> hashSet = mainResMap.get(childNode.name())
+                if (hashSet != null) {
+                    if (hashSet.contains(childNode.attribute("name"))) {
+                        removeCount += 1
+                        wholeNode.remove(childNode)
+                    }
+                }
+            }
+        }
+        return removeCount
+    }
+
     /**
      * Delete attribute from values.xml
      * @param aarPath The root directory
