@@ -24,6 +24,8 @@ class DuplicateResHandler {
      */
     private Map<String, HashSet<String>> mMainValuesMap = new HashMap<>()
 
+    private Set<String> mMainAssetsSet = new HashSet<>()
+
     /**
      * 构造函数
      */
@@ -37,13 +39,15 @@ class DuplicateResHandler {
      */
     private void init() {
         String mainResPath = mProject.projectDir.path + File.separator + "src" + File.separator + "main" + File.separator + "res"
-        iterateAllFiles(mainResPath)
+        iterateResFiles(mainResPath)
+        String mainAssetsPath = mProject.projectDir.path + File.separator + "src" + File.separator + "main" + File.separator + "assets"
+        iterateAssetsFiles(mainAssetsPath)
     }
 
     /**
-     * 遍历所有文件
+     * 遍历Res文件
      */
-    private void iterateAllFiles(String resPath) {
+    private void iterateResFiles(String resPath) {
         for (file in FileUtils.getFileArray(resPath)) {
             if (file == null || !file.isDirectory()) {
                 continue
@@ -60,6 +64,17 @@ class DuplicateResHandler {
                 readMainResDirectory(type, file)
             }
         }
+    }
+
+    /**
+     * 遍历Assets文件
+     */
+    private void iterateAssetsFiles(String assetsPath) {
+        for (fileName in FileUtils.getFileNameArray(assetsPath)) {
+            FatUtils.logAnytime("Gets the file name ${fileName}")
+            mMainAssetsSet.add(fileName)
+        }
+        FatUtils.logAnytime("iterate over")
     }
 
     /**

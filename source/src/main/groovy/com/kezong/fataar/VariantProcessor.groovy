@@ -41,10 +41,11 @@ class VariantProcessor {
 
     private DuplicateResHandler mDuplicateResHandler
 
-    VariantProcessor(Project project, LibraryVariant variant) {
+    VariantProcessor(Project project, LibraryVariant variant, DuplicateResHandler mDuplicateResHandler) {
         mProject = project
         mVariant = variant
         mVersionAdapter = new VersionAdapter(project, variant)
+        this.mDuplicateResHandler = mDuplicateResHandler
     }
 
     void addAndroidArchiveLibrary(AndroidArchiveLibrary library) {
@@ -266,8 +267,6 @@ class VariantProcessor {
         if (artifacts == null) {
             return
         }
-
-        mDuplicateResHandler = new DuplicateResHandler(mProject)
 
         for (final ResolvedArtifact artifact in artifacts) {
             if (FatAarPlugin.ARTIFACT_TYPE_JAR == artifact.type) {

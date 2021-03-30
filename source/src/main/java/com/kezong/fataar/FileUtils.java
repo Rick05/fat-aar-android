@@ -21,19 +21,23 @@ public class FileUtils {
         return file.listFiles();
     }
 
+    public static List<String> getFileNameArray(String filePath) {
+        return getFileNameArray(filePath, "");
+    }
+
     /**
      * 获取文件夹下所有文件名 **待扩展添加下级目录
      * @param filePath
      * @return
      */
-    public static List<String> getFileNameArray(String filePath) {
+    public static List<String> getFileNameArray(String filePath, String prefixPath) {
         File[] fileArray = getFileArray(filePath);
         List<String> fileNameArray = new ArrayList<>();
         for (File file: fileArray) {
             if (file.isDirectory()) {
-//                fileNameArray.addAll(getFileNameArray(file.getPath()));
+                getFileNameArray(file.getPath(), file.getPath() + File.separator);
             } else {
-                fileNameArray.add(file.getName());
+                fileNameArray.add(prefixPath + file.getName());
             }
         }
         return fileNameArray;
