@@ -38,7 +38,6 @@ class VariantProcessor {
     private VersionAdapter mVersionAdapter
 
     private TaskProvider mMergeClassTask
-    HashMap<String, HashSet<String>> mMainResMap = new HashMap<>()
 
     private DuplicateResHandler mDuplicateResHandler
 
@@ -269,7 +268,6 @@ class VariantProcessor {
         }
 
         mDuplicateResHandler = new DuplicateResHandler(mProject)
-        iterateMainResFile()
 
         for (final ResolvedArtifact artifact in artifacts) {
             if (FatAarPlugin.ARTIFACT_TYPE_JAR == artifact.type) {
@@ -308,8 +306,6 @@ class VariantProcessor {
                         if (mDuplicateResHandler != null) {
                             mDuplicateResHandler.deleteDuplicateRes(archiveLibrary.resFolder.path)
                         }
-                        DuplicateResUtils.deleteDuplicateRes(archiveLibrary.resFolder.path, mMainResMap)
-//                        DuplicateResUtils.deleteResAttribute(archiveLibrary.resFolder.path,mMainStringNameSet,mMainColorsNameSet)
                     }
                 }
 
@@ -324,48 +320,6 @@ class VariantProcessor {
                     dependsOn(explodeTask)
                 }
                 mExplodeTasks.add(explodeTask)
-            }
-        }
-    }
-
-    /**
-     * 遍历Main_values目录
-     */
-    private void iterateMainResFile() {
-        String mainResPath = mProject.projectDir.path + File.separator + "src" + File.separator + "main" + File.separator + "res" + File.separator + "values"
-        XmlParser xmlParser = new XmlParser()
-        // 按类型取出values目录下所有的key，进行保存
-        for (File resFile : FileUtils.getFileArray(mainResPath)) {
-            Node allNode = xmlParser.parse(resFile)
-            if (allNode != null) {
-                NodeList nodeList = (NodeList)allNode.value()
-                if (nodeList) {
-                    nodeList.each { node ->
-                        HashSet<String> hashSet = mMainResMap.get(node.name())
-                        if (hashSet == null) {
-                            hashSet = new HashSet<>()
-                            mMainResMap.put(node.name(), hashSet)
-                        }
-                        hashSet.add(node.attributes().get("name"))
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * 遍历主aar的res目录下的文件
-     */
-    private void iterateMainResFile(Set<String> set, String fileName, String nodeType) {
-        String mainStringsPath = mProject.projectDir.path + "/src/main/res/values/" + fileName
-        Node allNode = new XmlParser().parse(mainStringsPath)
-        if (allNode) {
-            NodeList nodeList = (NodeList) allNode.get(nodeType)
-            if (nodeList) {
-                nodeList.each {
-                    Node childNode = (Node) it
-                    set.add(childNode.attribute("name"))
-                }
             }
         }
     }

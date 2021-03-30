@@ -15,9 +15,14 @@ class DuplicateResHandler {
     private Project mProject
 
     /**
+     * 主aar的res目录下的文件夹map，key是文件夹类型，value是该文件夹里面所有文件的文件名集合，除了values
+     */
+    private Map<ResourceFolderType, HashSet<String>> mMainDirectoryMap = new HashMap<>()
+
+    /**
      * 主aar的res/values目录下的所有文件中节点的map，key是节点名称，value是该类节点的集合
      */
-    private Map<String, Set<String>> mMainValuesMap
+    private Map<String, HashSet<String>> mMainValuesMap = new HashMap<>()
 
     /**
      * 构造函数
@@ -39,8 +44,7 @@ class DuplicateResHandler {
      * 遍历所有文件
      */
     private void iterateAllFiles(String resPath) {
-        File[] files = new File(resPath).listFiles()
-        for (file in files) {
+        for (file in FileUtils.getFileArray(resPath)) {
             if (file == null || !file.isDirectory()) {
                 continue
             }
@@ -51,23 +55,17 @@ class DuplicateResHandler {
             }
             if (type == ResourceFolderType.VALUES) {
                 // 处理values目录
-                readMainAarValues(file.path)
+                readMainValues(file.path)
             } else {
-                Set<String> fileNameSet = mMainDirectoryMap.get(type)
-                if (fileNameSet != null) {
-                    File[] childFiles = file.listFiles()
-                    childFiles.each { childFile ->
-                        fileNameSet.add(childFile.name)
-                    }
-                }
+                readMainResDirectory(type, file)
             }
         }
     }
 
     /**
-     * 读取主aar的values目录下的文件
+     * 读取主包的values目录下的文件
      */
-    private void readMainAarValues(String path) {
+    private void readMainValues(String path) {
         XmlParser xmlParser = new XmlParser()
         // 按类型取出values目录下所有的key，进行保存
         for (File resFile : FileUtils.getFileArray(path)) {
@@ -76,15 +74,29 @@ class DuplicateResHandler {
                 NodeList nodeList = (NodeList)allNode.value()
                 if (nodeList) {
                     nodeList.each { node ->
-                        Set<String> hashSet = mMainValuesMap.get(node.name())
+                        HashSet<String> hashSet = mMainValuesMap.get(node.name())
                         if (hashSet == null) {
                             hashSet = new HashSet<>()
-                            mMainResMap.put(node.name(), hashSet)
+                            mMainValuesMap.put(node.name(), hashSet)
                         }
                         hashSet.add(node.attributes().get("name"))
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * 读取主包的res目录下各个文件夹中的文件列表
+     */
+    private void readMainResDirectory(ResourceFolderType type, File file) {
+        Set<String> fileNameSet = mMainDirectoryMap.get(type)
+        if (fileNameSet == null) {
+            fileNameSet = new HashSet<>()
+            mMainDirectoryMap.put(type, fileNameSet)
+        }
+        file.listFiles().each { childFile ->
+            fileNameSet.add(childFile.name)
         }
     }
 
@@ -142,6 +154,7 @@ class DuplicateResHandler {
                     if (file.name == fileName) {
                         file.delete()
                         i--
+                        FatUtils.logAnytime("Delete ${fileName} from the ${type.name}")
                         break
                     }
                 }
@@ -154,42 +167,38 @@ class DuplicateResHandler {
      * @param fileArray 文件数组
      */
     private void deleteValuesAttribute(File[] fileArray) {
+        XmlParser xmlParser = new XmlParser()
         for (File maybeResourceFile : fileArray) {
             if (maybeResourceFile.isDirectory()) {
                 continue
             }
-
             if (!maybeResourceFile.isFile()) {
                 throw new ResourceDirectoryParseException(
-                        "${maybeResourceFile.absolutePath} is not a file nor directory")
+                         "${maybeResourceFile.absolutePath} is not a file nor directory")
             }
 
-            Node wholeNode = new XmlParser().parse(maybeResourceFile)
+            Node wholeNode = xmlParser.parse(maybeResourceFile)
             int removeCount = 0
-
-            NodeList nodeList = new NodeList()
-            nodeList.addAll(wholeNode.children())
-            nodeList.each {
-                Node childNode = (Node) it
-                if (childNode != null && mMainValuesMap.get(childNode.name()) != null
-                        && mMainValuesMap.get(childNode.name()).contains(childNode.attribute("name"))) {
-                    wholeNode.remove(childNode)
-                    removeCount += 1
+            if (wholeNode != null) {
+                NodeList nodeList = new NodeList()
+                nodeList.addAll(wholeNode.children())
+                nodeList.each {
+                    Node childNode = (Node) it
+                    if (childNode != null) {
+                        HashSet<String> hashSet = mMainValuesMap.get(childNode.name())
+                        if (hashSet != null) {
+                            if (hashSet.contains(childNode.attribute("name"))) {
+                                removeCount += 1
+                                wholeNode.remove(childNode)
+                            }
+                        }
+                    }
                 }
             }
-
             if (removeCount > 0) {
-                logLevel2 "Delete " + removeCount + " values..."
+                FatUtils.logAnytime("Delete ${removeCount} values from ${maybeResourceFile.name}")
                 Files.asCharSink(maybeResourceFile, Charsets.UTF_8).write(XmlUtil.serialize(wholeNode))
             }
         }
-    }
-
-    def logLevel1(Object value) {
-        println ">> " + value
-    }
-
-    def logLevel2(Object value) {
-        println "   " + value
     }
 }
