@@ -22,7 +22,8 @@ public class FileUtils {
     }
 
     public static List<String> getFileNameArray(String filePath) {
-        return getFileNameArray(filePath, "");
+        List<String> fileNameArray = new ArrayList<>();
+        return getFileNameArray(fileNameArray, filePath, "");
     }
 
     /**
@@ -30,16 +31,18 @@ public class FileUtils {
      * @param filePath
      * @return
      */
-    public static List<String> getFileNameArray(String filePath, String prefixPath) {
+    public static List<String> getFileNameArray(List<String> array, String filePath, String prefixPath) {
         File[] fileArray = getFileArray(filePath);
-        List<String> fileNameArray = new ArrayList<>();
+        if (fileArray == null) {
+            return array;
+        }
         for (File file: fileArray) {
             if (file.isDirectory()) {
-                getFileNameArray(file.getPath(), file.getPath() + File.separator);
+                getFileNameArray(array, file.getPath(), prefixPath + File.separator + file.getName() + File.separator);
             } else {
-                fileNameArray.add(prefixPath + file.getName());
+                array.add(prefixPath + file.getName());
             }
         }
-        return fileNameArray;
+        return array;
     }
 }

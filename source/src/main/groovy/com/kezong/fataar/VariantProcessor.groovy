@@ -303,6 +303,7 @@ class VariantProcessor {
 
                     doLast {
                         if (mDuplicateResHandler != null) {
+                            mDuplicateResHandler.deleteDuplicateAssetsFiles(archiveLibrary.assetsFolder.path)
                             mDuplicateResHandler.deleteDuplicateRes(archiveLibrary.resFolder.path)
                         }
                     }

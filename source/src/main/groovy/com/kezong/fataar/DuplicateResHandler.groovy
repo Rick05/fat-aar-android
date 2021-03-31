@@ -5,6 +5,7 @@ import com.android.resources.ResourceFolderType
 import com.google.common.base.Charsets
 import com.google.common.io.Files
 import groovy.xml.XmlUtil
+import org.apache.http.util.TextUtils
 import org.gradle.api.Project
 
 /**
@@ -71,10 +72,26 @@ class DuplicateResHandler {
      */
     private void iterateAssetsFiles(String assetsPath) {
         for (fileName in FileUtils.getFileNameArray(assetsPath)) {
-            FatUtils.logAnytime("Gets the file name ${fileName}")
             mMainAssetsSet.add(fileName)
         }
-        FatUtils.logAnytime("iterate over")
+    }
+
+    /**
+     * 删除与主包重复的assets文件
+     * @param path
+     */
+    void deleteDuplicateAssetsFiles(String path) {
+        if (TextUtils.isEmpty(path)) {
+            return
+        }
+        List<String> aarFileNameArray = FileUtils.getFileNameArray(path)
+        for (fileName in aarFileNameArray) {
+            if (mMainAssetsSet.contains(fileName)) {
+                File file = new File(path + File.separator + fileName)
+                file.delete()
+                FatUtils.logAnytime("Delete ${fileName} from the ${path}")
+            }
+        }
     }
 
     /**

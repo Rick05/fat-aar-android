@@ -1,3 +1,4 @@
+include ':source'
 include ':lib-main'
 include ':lib-java'
 include ':lib-aar'
