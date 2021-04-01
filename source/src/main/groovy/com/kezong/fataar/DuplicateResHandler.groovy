@@ -49,6 +49,7 @@ class DuplicateResHandler {
      * 遍历Res文件
      */
     private void iterateResFiles(String resPath) {
+        RunTimeUtils.getInstance().start("iterateResFiles")
         for (file in FileUtils.getFileArray(resPath)) {
             if (file == null || !file.isDirectory()) {
                 continue
@@ -65,6 +66,7 @@ class DuplicateResHandler {
                 readMainResDirectory(type, file)
             }
         }
+        RunTimeUtils.getInstance().end("iterateResFiles")
     }
 
     /**
@@ -100,6 +102,7 @@ class DuplicateResHandler {
      * 读取主包的values目录下的文件
      */
     private void readMainValues(String path) {
+        RunTimeUtils.getInstance().start("readMainValues")
         XmlParser xmlParser = new XmlParser()
         // 按类型取出values目录下所有的key，进行保存
         for (File resFile : FileUtils.getFileArray(path)) {
@@ -116,12 +119,14 @@ class DuplicateResHandler {
                 }
             }
         }
+        RunTimeUtils.getInstance().end("readMainValues")
     }
 
     /**
      * 读取主包的res目录下各个文件夹中的文件列表
      */
     private void readMainResDirectory(ResourceFolderType type, File file) {
+        RunTimeUtils.getInstance().start("readMainResDirectory")
         Set<String> fileNameSet = mMainDirectoryMap.get(type)
         if (fileNameSet == null) {
             fileNameSet = new HashSet<>()
@@ -130,6 +135,7 @@ class DuplicateResHandler {
         file.listFiles().each { childFile ->
             fileNameSet.add(childFile.name)
         }
+        RunTimeUtils.getInstance().end("readMainResDirectory")
     }
 
     /**
@@ -137,6 +143,7 @@ class DuplicateResHandler {
      * @param aarPath 跟目录
      */
     void deleteDuplicateRes(String aarPath) {
+        RunTimeUtils.getInstance().start("deleteDuplicateRes")
         File[] files = new File(aarPath).listFiles()
         if (files == null) {
             return
@@ -161,6 +168,7 @@ class DuplicateResHandler {
                 deleteDuplicateFiles(folderResourceType, listFiles)
             }
         }
+        RunTimeUtils.getInstance().end("deleteDuplicateRes")
     }
 
     /**
@@ -169,6 +177,7 @@ class DuplicateResHandler {
      * @param fileArray 文件数组
      */
     private void deleteDuplicateFiles(ResourceFolderType type, File[] fileArray) {
+        RunTimeUtils.getInstance().start("deleteDuplicateFiles")
         Set<String> mainFileSet = mMainDirectoryMap.get(type)
         if (mainFileSet == null || mainFileSet.isEmpty()) {
             return
@@ -192,6 +201,7 @@ class DuplicateResHandler {
                 }
             }
         }
+        RunTimeUtils.getInstance().end("deleteDuplicateFiles")
     }
 
     /**
@@ -199,6 +209,7 @@ class DuplicateResHandler {
      * @param fileArray 文件数组
      */
     private void deleteValuesAttribute(File[] fileArray) {
+        RunTimeUtils.getInstance().start("deleteValuesAttribute")
         XmlParser xmlParser = new XmlParser()
         for (File maybeResourceFile : fileArray) {
             if (maybeResourceFile.isDirectory()) {
@@ -232,5 +243,6 @@ class DuplicateResHandler {
                 Files.asCharSink(maybeResourceFile, Charsets.UTF_8).write(XmlUtil.serialize(wholeNode))
             }
         }
+        RunTimeUtils.getInstance().end("deleteValuesAttribute")
     }
 }

@@ -302,10 +302,12 @@ class VariantProcessor {
                     }
 
                     doLast {
+                        RunTimeUtils.getInstance().start("start delete duplicate")
                         if (mDuplicateResHandler != null) {
                             mDuplicateResHandler.deleteDuplicateAssetsFiles(archiveLibrary.assetsFolder.path)
                             mDuplicateResHandler.deleteDuplicateRes(archiveLibrary.resFolder.path)
                         }
+                        RunTimeUtils.getInstance().end("start delete duplicate")
                     }
                 }
 
