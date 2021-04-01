@@ -105,17 +105,14 @@ class DuplicateResHandler {
         for (File resFile : FileUtils.getFileArray(path)) {
             Node allNode = xmlParser.parse(resFile)
             if (allNode != null) {
-                NodeList nodeList = (NodeList)allNode.children()
-                if (nodeList) {
-                    nodeList.each { it ->
-                        Node node = (Node) it
-                        HashSet<String> hashSet = mMainValuesMap.get(node.name())
-                        if (hashSet == null) {
-                            hashSet = new HashSet<>()
-                            mMainValuesMap.put(node.name(), hashSet)
-                        }
-                        hashSet.add(node.attributes().get("name"))
+                allNode.children().each { it ->
+                    Node node = (Node) it
+                    HashSet<String> hashSet = mMainValuesMap.get(node.name())
+                    if (hashSet == null) {
+                        hashSet = new HashSet<>()
+                        mMainValuesMap.put(node.name(), hashSet)
                     }
+                    hashSet.add(node.attributes().get("name"))
                 }
             }
         }
