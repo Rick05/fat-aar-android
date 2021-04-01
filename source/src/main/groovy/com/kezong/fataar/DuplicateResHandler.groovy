@@ -88,7 +88,9 @@ class DuplicateResHandler {
         for (fileName in aarFileNameArray) {
             if (mMainAssetsSet.contains(fileName)) {
                 File file = new File(path + File.separator + fileName)
-                file.delete()
+                if(file.exists()) {
+                    file.delete()
+                }
                 FatUtils.logAnytime("Delete ${fileName} from the ${path}")
             }
         }
@@ -103,9 +105,10 @@ class DuplicateResHandler {
         for (File resFile : FileUtils.getFileArray(path)) {
             Node allNode = xmlParser.parse(resFile)
             if (allNode != null) {
-                NodeList nodeList = (NodeList)allNode.value()
+                NodeList nodeList = (NodeList)allNode.children()
                 if (nodeList) {
-                    nodeList.each { node ->
+                    nodeList.each { it ->
+                        Node node = (Node) it
                         HashSet<String> hashSet = mMainValuesMap.get(node.name())
                         if (hashSet == null) {
                             hashSet = new HashSet<>()
@@ -181,7 +184,7 @@ class DuplicateResHandler {
             }
 
             // file可能不存在
-            if (file.isFile()) {
+            if (file.isFile() && file.exists()) {
                 for (fileName in mainFileSet) {
                     if (file.name == fileName) {
                         file.delete()

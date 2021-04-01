@@ -23,7 +23,7 @@ dependencies {
     implementation gradleApi()
     implementation localGroovy()
     implementation "org.javassist:javassist:3.27.0-GA"
-    implementation 'com.android.tools.build:gradle:4.1.0'
+    implementation 'com.android.tools.build:gradle:3.5.0'
 }
 
 //afterEvaluate {
@@ -42,7 +42,7 @@ uploadArchives {
             repository(url: uri('../repositories'))
             pom.groupId = 'com.kezong'
             pom.artifactId = 'fat-aar'
-            pom.version = '2.0.2'
+            pom.version = '2.0.3'
         }
     }
 }
