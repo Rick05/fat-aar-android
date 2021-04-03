@@ -39,10 +39,13 @@ class VariantProcessor {
 
     private TaskProvider mMergeClassTask
 
-    VariantProcessor(Project project, LibraryVariant variant) {
+    private DuplicateResHandler mDuplicateResHandler
+
+    VariantProcessor(Project project, LibraryVariant variant, DuplicateResHandler mDuplicateResHandler) {
         mProject = project
         mVariant = variant
         mVersionAdapter = new VersionAdapter(project, variant)
+        this.mDuplicateResHandler = mDuplicateResHandler
     }
 
     void addAndroidArchiveLibrary(AndroidArchiveLibrary library) {
@@ -79,7 +82,7 @@ class VariantProcessor {
     }
 
     private static void printEmbedArtifacts(Collection<ResolvedArtifact> artifacts,
-                                     Collection<ResolvedDependency> dependencies) {
+                                            Collection<ResolvedDependency> dependencies) {
         Collection<String> moduleNames = artifacts.stream().map { it.moduleVersion.id.name }.collect()
         dependencies.each { dependency ->
             if (!moduleNames.contains(dependency.moduleName)) {
@@ -264,6 +267,7 @@ class VariantProcessor {
         if (artifacts == null) {
             return
         }
+
         for (final ResolvedArtifact artifact in artifacts) {
             if (FatAarPlugin.ARTIFACT_TYPE_JAR == artifact.type) {
                 addJarFile(artifact.file)
@@ -295,6 +299,15 @@ class VariantProcessor {
                     doFirst {
                         // Delete previously extracted data.
                         zipFolder.deleteDir()
+                    }
+
+                    doLast {
+                        RunTimeUtils.getInstance().start("start delete duplicate")
+                        if (mDuplicateResHandler != null) {
+                            mDuplicateResHandler.deleteDuplicateAssetsFiles(archiveLibrary.assetsFolder.path)
+                            mDuplicateResHandler.deleteDuplicateRes(archiveLibrary.resFolder.path)
+                        }
+                        RunTimeUtils.getInstance().end("start delete duplicate")
                     }
                 }
 

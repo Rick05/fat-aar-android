@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <array name="lib_aar_array1">
+        <item>lib aar 1</item>
+        <item>lib aar 2</item>
+    </array>
+    <array name="lib_aar_array2">
+        <item>lib aar 1</item>
+        <item>lib aar 2</item>
+        <item>lib aar 3</item>
+    </array>
+</resources>

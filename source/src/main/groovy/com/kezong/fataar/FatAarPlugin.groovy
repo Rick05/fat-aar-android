@@ -53,7 +53,7 @@ class FatAarPlugin implements Plugin<Project> {
                 it.transitive = true
             }
         }
-
+        DuplicateResHandler duplicateResHandler = new DuplicateResHandler(project)
         project.android.libraryVariants.all { LibraryVariant variant ->
             Collection<ResolvedArtifact> artifacts = new ArrayList()
             Collection<ResolvedDependency> firstLevelDependencies = new ArrayList<>()
@@ -70,7 +70,7 @@ class FatAarPlugin implements Plugin<Project> {
             }
 
             if (!artifacts.isEmpty()) {
-                def processor = new VariantProcessor(project, variant)
+                def processor = new VariantProcessor(project, variant, duplicateResHandler)
                 processor.processVariant(artifacts, firstLevelDependencies, transform)
             }
         }

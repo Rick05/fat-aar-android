@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <array name="lib_main_array1">
+        <item>main</item>
+        <item>main</item>
+    </array>
+    <array name="lib_aar_array2">
+        <item>main</item>
+        <item>main</item>
+        <item>main</item>
+    </array>
+</resources>

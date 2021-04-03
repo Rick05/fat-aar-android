@@ -1,5 +1,5 @@
 apply plugin: 'groovy'
-apply from: "./upload.gradle"
+apply plugin: 'maven'
 
 buildscript {
     repositories {
@@ -18,5 +18,19 @@ dependencies {
     implementation gradleApi()
     implementation localGroovy()
     implementation "org.javassist:javassist:3.27.0-GA"
-    implementation 'com.android.tools.build:gradle:4.1.0'
+    implementation 'com.android.tools.build:gradle:3.5.0'
 }
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            //本地Maven
+            repository(url: uri('../repositories'))
+            pom.groupId = 'com.github.kezong'
+            pom.artifactId = 'fat-aar'
+            pom.version = '2.0.3'
+        }
+    }
+}
+
+
