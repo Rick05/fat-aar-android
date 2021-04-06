@@ -1,7 +1,10 @@
-include ':source'
 include ':lib-main'
 include ':lib-java'
 include ':lib-aar'
 include ':lib-aar2'
 include ':lib-aar-local'
 include ':app'
+include ':example'
+def path = "../source"
+project(':example').projectDir = new File(path)
+include ':example:source'
