@@ -3,6 +3,7 @@ package com.kezong.fataar
 class RunTimeUtils {
 
     HashMap<String, Long> durationMap = new HashMap<>()
+    final String suffix = "-TOTAL"
 
     private RunTimeUtils() {
     }
@@ -18,9 +19,21 @@ class RunTimeUtils {
     }
 
     public void end(String tag) {
+        this.end(tag, false)
+    }
+
+    public void end(String tag, boolean isCalTotal) {
         Long startTime = durationMap.get(tag)
         if (startTime != null) {
-            FatUtils.logAnytime("-----> ${tag} executes for ${System.currentTimeMillis() - startTime} millis")
+            long runTime = System.currentTimeMillis() - startTime
+            if (isCalTotal) {
+                Long time = durationMap.get(tag + suffix)
+                if (time == null) time = 0L
+                long totalTime = time + runTime
+                durationMap.put(tag + suffix, totalTime)
+                FatUtils.logAnytime("-----> ${tag + suffix} executes for millis")
+            }
+            FatUtils.logAnytime("-----> ${tag} executes for ${runTime} millis")
         } else {
             throw new RuntimeException("miss call method start(${tag})")
         }

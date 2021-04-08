@@ -6,6 +6,7 @@ import com.google.common.base.Charsets
 import com.google.common.io.Files
 import groovy.xml.XmlUtil
 import org.apache.http.util.TextUtils
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 import org.gradle.api.Project
 
 /**
@@ -49,7 +50,7 @@ class DuplicateResHandler {
      * 遍历Res文件
      */
     private void iterateResFiles(String resPath) {
-        RunTimeUtils.getInstance().start("iterateResFiles")
+        RunTimeUtils.getInstance().start("iterateMainResFiles")
         for (file in FileUtils.getFileArray(resPath)) {
             if (file == null || !file.isDirectory()) {
                 continue
@@ -66,16 +67,18 @@ class DuplicateResHandler {
                 readMainResDirectory(type, file)
             }
         }
-        RunTimeUtils.getInstance().end("iterateResFiles")
+        RunTimeUtils.getInstance().end("iterateMainResFiles")
     }
 
     /**
      * 遍历Assets文件
      */
     private void iterateAssetsFiles(String assetsPath) {
+        RunTimeUtils.getInstance().start("iterateMainAssetsFiles")
         for (fileName in FileUtils.getFileNameArray(assetsPath)) {
             mMainAssetsSet.add(fileName)
         }
+        RunTimeUtils.getInstance().start("iterateMainAssetsFiles")
     }
 
     /**
@@ -102,31 +105,35 @@ class DuplicateResHandler {
      * 读取主包的values目录下的文件
      */
     private void readMainValues(String path) {
-        RunTimeUtils.getInstance().start("readMainValues")
+        RunTimeUtils.getInstance().start("readMainValues $path")
         XmlParser xmlParser = new XmlParser()
         // 按类型取出values目录下所有的key，进行保存
         for (File resFile : FileUtils.getFileArray(path)) {
             Node allNode = xmlParser.parse(resFile)
             if (allNode != null) {
                 allNode.children().each { it ->
-                    Node node = (Node) it
-                    HashSet<String> hashSet = mMainValuesMap.get(node.name())
-                    if (hashSet == null) {
-                        hashSet = new HashSet<>()
-                        mMainValuesMap.put(node.name(), hashSet)
+                    if (it instanceof Node) {
+                        Node node = (Node) it
+                        HashSet<String> hashSet = mMainValuesMap.get(node.name())
+                        if (hashSet == null) {
+                            hashSet = new HashSet<>()
+                            mMainValuesMap.put(node.name(), hashSet)
+                        }
+                        hashSet.add(node.attributes().get("name"))
+                    } else {
+                        throw new GroovyCastException("in the file $path, ${it.toString()} cannot cast Node")
                     }
-                    hashSet.add(node.attributes().get("name"))
                 }
             }
         }
-        RunTimeUtils.getInstance().end("readMainValues")
+        RunTimeUtils.getInstance().end("readMainValues $path")
     }
 
     /**
      * 读取主包的res目录下各个文件夹中的文件列表
      */
     private void readMainResDirectory(ResourceFolderType type, File file) {
-        RunTimeUtils.getInstance().start("readMainResDirectory")
+        RunTimeUtils.getInstance().start("readMainResDirectory ${file.getName()}")
         Set<String> fileNameSet = mMainDirectoryMap.get(type)
         if (fileNameSet == null) {
             fileNameSet = new HashSet<>()
@@ -135,7 +142,7 @@ class DuplicateResHandler {
         file.listFiles().each { childFile ->
             fileNameSet.add(childFile.name)
         }
-        RunTimeUtils.getInstance().end("readMainResDirectory")
+        RunTimeUtils.getInstance().end("readMainResDirectory ${file.getName()}")
     }
 
     /**
@@ -143,7 +150,6 @@ class DuplicateResHandler {
      * @param aarPath 跟目录
      */
     void deleteDuplicateRes(String aarPath) {
-        RunTimeUtils.getInstance().start("deleteDuplicateRes")
         File[] files = new File(aarPath).listFiles()
         if (files == null) {
             return
@@ -168,7 +174,6 @@ class DuplicateResHandler {
                 deleteDuplicateFiles(folderResourceType, listFiles)
             }
         }
-        RunTimeUtils.getInstance().end("deleteDuplicateRes")
     }
 
     /**
@@ -177,7 +182,6 @@ class DuplicateResHandler {
      * @param fileArray 文件数组
      */
     private void deleteDuplicateFiles(ResourceFolderType type, File[] fileArray) {
-        RunTimeUtils.getInstance().start("deleteDuplicateFiles")
         Set<String> mainFileSet = mMainDirectoryMap.get(type)
         if (mainFileSet == null || mainFileSet.isEmpty()) {
             return
@@ -201,7 +205,6 @@ class DuplicateResHandler {
                 }
             }
         }
-        RunTimeUtils.getInstance().end("deleteDuplicateFiles")
     }
 
     /**
@@ -209,7 +212,6 @@ class DuplicateResHandler {
      * @param fileArray 文件数组
      */
     private void deleteValuesAttribute(File[] fileArray) {
-        RunTimeUtils.getInstance().start("deleteValuesAttribute")
         XmlParser xmlParser = new XmlParser()
         for (File maybeResourceFile : fileArray) {
             if (maybeResourceFile.isDirectory()) {
@@ -226,15 +228,19 @@ class DuplicateResHandler {
                 NodeList nodeList = new NodeList()
                 nodeList.addAll(wholeNode.children())
                 nodeList.each {
-                    Node childNode = (Node) it
-                    if (childNode != null) {
-                        HashSet<String> hashSet = mMainValuesMap.get(childNode.name())
-                        if (hashSet != null) {
-                            if (hashSet.contains(childNode.attribute("name"))) {
-                                removeCount += 1
-                                wholeNode.remove(childNode)
+                    if (it instanceof Node) {
+                        Node childNode = (Node) it
+                        if (childNode != null) {
+                            HashSet<String> hashSet = mMainValuesMap.get(childNode.name())
+                            if (hashSet != null) {
+                                if (hashSet.contains(childNode.attribute("name"))) {
+                                    removeCount += 1
+                                    wholeNode.remove(childNode)
+                                }
                             }
                         }
+                    } else {
+                        throw new GroovyCastException("in the file ${maybeResourceFile.getPath()}, ${it.toString()} cannot cast Node")
                     }
                 }
             }
@@ -243,6 +249,5 @@ class DuplicateResHandler {
                 Files.asCharSink(maybeResourceFile, Charsets.UTF_8).write(XmlUtil.serialize(wholeNode))
             }
         }
-        RunTimeUtils.getInstance().end("deleteValuesAttribute")
     }
 }

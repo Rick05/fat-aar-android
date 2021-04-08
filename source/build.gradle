@@ -40,9 +40,9 @@ uploadArchives {
         mavenDeployer {
             //本地Maven
             repository(url: uri('../repositories'))
-            pom.groupId = 'com.kezong'
+            pom.groupId = 'com.github.kezong'
             pom.artifactId = 'fat-aar'
-            pom.version = '2.0.3'
+            pom.version = '2.0.4'
         }
     }
 }
