@@ -27,8 +27,10 @@ public class FileUtils {
     }
 
     /**
-     * 获取文件夹下所有文件名 **待扩展添加下级目录
-     * @param filePath
+     * 获取文件夹下所有文件名
+     * @param array 文件名称数组
+     * @param filePath 文件路径
+     * @param prefixPath 文件前缀 ##子目录下文件名前添加目录名称
      * @return
      */
     public static List<String> getFileNameArray(List<String> array, String filePath, String prefixPath) {
