@@ -1,5 +1,6 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.kezong.fat-aar'
+apply plugin: 'com.rick.fat-aar'
+//apply plugin: 'com.kezong.fat-aar'
 apply plugin: 'kotlin-android'
 
 repositories {

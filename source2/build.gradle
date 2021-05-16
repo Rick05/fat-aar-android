@@ -1,0 +1,44 @@
+apply plugin: 'maven'
+apply plugin: 'kotlin'
+apply plugin: 'kotlin-kapt'
+
+buildscript {
+
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:3.5.0"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.72"
+    }
+}
+
+repositories {
+    mavenCentral()
+    google()
+    maven { url "https://plugins.gradle.org/m2/" }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation gradleApi()
+    implementation "org.javassist:javassist:3.27.0-GA"
+    implementation 'com.android.tools.build:gradle:3.5.0'
+    runtime 'com.github.kezong:fat-aar:1.3.6'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.3.72"
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            //本地Maven
+            repository(url: uri('../repositories'))
+            pom.groupId = 'com.github.rick'
+            pom.artifactId = 'fat-aar'
+            pom.version = '3.0.18'
+        }
+    }
+}
+
+
