@@ -5,7 +5,7 @@ import com.android.ide.common.symbols.ResourceDirectoryParseException
 import com.android.resources.ResourceFolderType
 import com.google.common.base.Charsets
 import com.google.common.io.Files
-import com.rick.fataar.RunTimeUtils.Companion.instance
+import com.rick.fataar.CountTimeUtils.Companion.countTimeUtils
 import groovy.util.Node
 import groovy.util.NodeList
 import groovy.util.XmlParser
@@ -47,7 +47,7 @@ class DuplicateResHandler(private val mProject: Project) {
      * 遍历Res文件
      */
     private fun iterateResFiles(resPath: String) {
-        instance.start("iterateMainResFiles")
+        countTimeUtils.start("iterateMainResFiles")
         for (file in FileUtils.getFileArray(resPath)) {
             if (!file.isDirectory) {
                 continue
@@ -61,18 +61,75 @@ class DuplicateResHandler(private val mProject: Project) {
                 readMainResDirectory(type, file)
             }
         }
-        instance.end("iterateMainResFiles")
+        countTimeUtils.end("iterateMainResFiles")
     }
 
     /**
      * 遍历Assets文件
      */
     private fun iterateAssetsFiles(assetsPath: String) {
-        instance.start("iterateMainAssetsFiles")
+        countTimeUtils.start("iterateMainAssetsFiles")
         for (fileName in FileUtils.getFileNameArray(assetsPath)) {
             mMainAssetsSet.add(fileName)
         }
-        instance.start("iterateMainAssetsFiles")
+        countTimeUtils.end("iterateMainAssetsFiles")
+    }
+
+    /**
+     * 读取主包的values目录下的文件
+     */
+    private fun readMainValues(path: String) {
+        countTimeUtils.start("readMainValues $path")
+        var xmlParser: XmlParser? = null
+        try {
+            xmlParser = XmlParser()
+        } catch (e: ParserConfigurationException) {
+            LogUtils.logError(e.message)
+        } catch (e: SAXException) {
+            LogUtils.logError(e.message)
+        }
+
+        // 按类型取出values目录下所有的key，进行保存
+        for (resFile in FileUtils.getFileArray(path)) {
+            var allNode: Node? = null
+            try {
+                allNode = xmlParser?.parse(resFile)
+            } catch (e: IOException) {
+                LogUtils.logError(e.message)
+            } catch (e: SAXException) {
+                LogUtils.logError(e.message)
+            }
+
+            allNode?.children()?.forEach {
+                if (it is Node) {
+                    var hashSet = mMainValuesMap[it.name()]
+                    if (hashSet == null) {
+                        hashSet = HashSet()
+                        mMainValuesMap[it.name() as String] = hashSet
+                    }
+                    hashSet.add(it.attributes()["name"] as String?)
+                } else {
+                    throw GroovyCastException("in the file $path, ${it.toString()} cannot cast Node")
+                }
+            }
+        }
+        countTimeUtils.end("readMainValues $path")
+    }
+
+    /**
+     * 读取主包的res目录下各个文件夹中的文件列表
+     */
+    private fun readMainResDirectory(type: ResourceFolderType, file: File) {
+        countTimeUtils.start("readMainResDirectory ${file.name}")
+        var fileNameSet = mMainDirectoryMap[type]
+        if (fileNameSet == null) {
+            fileNameSet = HashSet()
+            mMainDirectoryMap[type] = fileNameSet
+        }
+        file.listFiles()?.forEach {
+            fileNameSet.add(it.name)
+        }
+        countTimeUtils.end("readMainResDirectory ${file.name}")
     }
 
     /**
@@ -85,118 +142,56 @@ class DuplicateResHandler(private val mProject: Project) {
         val explodedRootDir = mProject.file("${mProject.buildDir}/intermediates/exploded-aar/")
                 ?: return
 
+        // 遍历处理文件
         val fileTreeWalk: FileTreeWalk = explodedRootDir.walk()
-        fileTreeWalk.filter { it.name == variant.name }.forEach { dir ->
-            if (dir.isDirectory && dir.exists()) {
-                dir.walk().maxDepth(1).filter { it -> it.name == "assets" }.forEach { assetsDir ->
-                    deleteDuplicateAssetsFiles(assetsDir)
-                }
-                dir.walk().maxDepth(1).filter { it -> it.name == "res" }.forEach { resDir ->
-                    deleteDuplicateRes(resDir)
-                }
+        fileTreeWalk.filter { it.name == variant.name && it.isDirectory && it.exists() }.forEach { dir ->
+            // assets目录
+            dir.walk().maxDepth(1).filter { it.name == "assets" }.forEach { assetsDir ->
+                deleteDuplicateAssetsFiles(assetsDir)
+            }
+            // res目录
+            dir.walk().maxDepth(1).filter { it.name == "res" }.forEach { resDir ->
+                deleteDuplicateRes(resDir)
             }
         }
     }
 
     /**
      * 删除与主包重复的assets文件
-     *
-     * @param variant
      */
-    fun deleteDuplicateAssetsFiles(dir: File?) {
+    private fun deleteDuplicateAssetsFiles(dir: File?) {
+        countTimeUtils.start("deleteDuplicateAssetsFiles ${dir?.path}")
         if (dir?.isDirectory == true && dir.exists()) {
             val path = dir.absolutePath
-            val aarFileNameArray = FileUtils.getFileNameArray(path)
-            for (fileName in aarFileNameArray) {
-                if (mMainAssetsSet.contains(fileName)) {
-                    val file = File(path + File.separator + fileName)
-                    if (file.exists()) {
-                        file.delete()
-                    }
-                    FatUtils.logAnytime("Delete $fileName from the $path")
+            FileUtils.getFileNameArray(path).filter { mMainAssetsSet.contains(it) }.forEach {
+                val file = File(path + File.separator + it)
+                if (file.exists()) {
+                    file.delete()
                 }
+                LogUtils.logAnytime("Delete $it from the $path")
             }
         }
+        countTimeUtils.end("deleteDuplicateAssetsFiles ${dir?.path}")
     }
 
     /**
-     * 读取主包的values目录下的文件
+     * 删除res重复资源
      */
-    private fun readMainValues(path: String) {
-        instance.start("readMainValues \$path")
-        var xmlParser: XmlParser? = null
-        try {
-            xmlParser = XmlParser()
-        } catch (e: ParserConfigurationException) {
-            e.printStackTrace()
-        } catch (e: SAXException) {
-            e.printStackTrace()
-        }
-        // 按类型取出values目录下所有的key，进行保存
-        for (resFile in FileUtils.getFileArray(path)) {
-            var allNode: Node? = null
-            try {
-                allNode = xmlParser?.parse(resFile)
-            } catch (e: IOException) {
-                e.printStackTrace()
-            } catch (e: SAXException) {
-                e.printStackTrace()
-            }
-            if (allNode != null) {
-                for (it in allNode.children()) {
-                    if (it is Node) {
-                        var hashSet = mMainValuesMap[it.name()]
-                        if (hashSet == null) {
-                            hashSet = HashSet()
-                            mMainValuesMap[it.name() as String] = hashSet
-                        }
-                        hashSet.add(it.attributes()["name"] as String?)
-                    } else {
-                        throw GroovyCastException("in the file $path, ${it.toString()} cannot cast Node")
-                    }
-                }
-            }
-        }
-        instance.end("readMainValues \$path")
-    }
-
-    /**
-     * 读取主包的res目录下各个文件夹中的文件列表
-     */
-    private fun readMainResDirectory(type: ResourceFolderType, file: File) {
-        instance.start("readMainResDirectory ${file.name}")
-        var fileNameSet = mMainDirectoryMap[type]
-        if (fileNameSet == null) {
-            fileNameSet = HashSet()
-            mMainDirectoryMap[type] = fileNameSet
-        }
-        for (childFile in file.listFiles()) {
-            fileNameSet.add(childFile.name)
-        }
-        instance.end("readMainResDirectory ${file.name}")
-    }
-
-    /**
-     * 删除重复资源
-     */
-    fun deleteDuplicateRes(dir: File?) {
+    private fun deleteDuplicateRes(dir: File?) {
+        countTimeUtils.start("deleteDuplicateRes ${dir?.path}")
         if (dir?.isDirectory == true && dir.exists()) {
-            val files = dir.listFiles() ?: return
-            for (resourceDirectory in files) {
-                if (!resourceDirectory.isDirectory) {
-                    throw ResourceDirectoryParseException(
-                            resourceDirectory.absolutePath + " is not a directory")
-                }
-                assert(resourceDirectory.isDirectory)
-                val listFiles = resourceDirectory.listFiles() ?: continue
-                val folderResourceType = ResourceFolderType.getFolderType(resourceDirectory.name)
-                if (folderResourceType == ResourceFolderType.VALUES) {
-                    deleteValuesAttribute(listFiles)
-                } else {
-                    deleteDuplicateFiles(folderResourceType, listFiles)
+            dir.listFiles()?.filter { it.isDirectory }?.forEach {
+                it.listFiles()?.let { listFiles ->
+                    val folderResourceType = ResourceFolderType.getFolderType(it.name)
+                    if (folderResourceType == ResourceFolderType.VALUES) {
+                        deleteValuesAttribute(listFiles)
+                    } else {
+                        deleteDuplicateFiles(folderResourceType, listFiles)
+                    }
                 }
             }
         }
+        countTimeUtils.end("deleteDuplicateRes ${dir?.path}")
     }
 
     /**
@@ -210,11 +205,12 @@ class DuplicateResHandler(private val mProject: Project) {
         if (mainFileSet == null || mainFileSet.isEmpty()) {
             return
         }
+
         var i = 0
         while (i < fileArray.size) {
+            i++
             val file = fileArray[i]
             if (file.isDirectory) {
-                i++
                 continue
             }
 
@@ -224,12 +220,11 @@ class DuplicateResHandler(private val mProject: Project) {
                     if (file.name === fileName) {
                         file.delete()
                         i--
-                        FatUtils.logAnytime("Delete $fileName from the ${type.name}")
+                        LogUtils.logAnytime("Delete $fileName from the ${type.name}")
                         break
                     }
                 }
             }
-            i++
         }
     }
 
@@ -243,51 +238,36 @@ class DuplicateResHandler(private val mProject: Project) {
         try {
             xmlParser = XmlParser()
         } catch (e: ParserConfigurationException) {
-            e.printStackTrace()
+            LogUtils.logError(e.message)
         } catch (e: SAXException) {
-            e.printStackTrace()
+            LogUtils.logError(e.message)
         }
-        for (maybeResourceFile in fileArray) {
-            if (maybeResourceFile.isDirectory) {
-                continue
-            }
-            if (!maybeResourceFile.isFile) {
-                throw ResourceDirectoryParseException(
-                        "${maybeResourceFile.absolutePath} is not a file nor directory")
-            }
+
+        fileArray.filter { it.isFile }.forEach { file ->
             var wholeNode: Node? = null
             try {
-                wholeNode = xmlParser?.parse(maybeResourceFile)
+                wholeNode = xmlParser?.parse(file)
             } catch (e: IOException) {
-                e.printStackTrace()
+                LogUtils.logError(e.message)
             } catch (e: SAXException) {
-                e.printStackTrace()
+                LogUtils.logError(e.message)
             }
+
             var removeCount = 0
-            if (wholeNode != null) {
-                val nodeList = NodeList()
-                nodeList.addAll(wholeNode.children())
-                for (it in nodeList) {
-                    if (it is Node) {
-                        if (it.name() != null) {
-                            val hashSet: HashSet<String?>? = mMainValuesMap[it.name()]
-                            if (hashSet != null) {
-                                if (hashSet.contains(it.attribute("name"))) {
-                                    removeCount += 1
-                                    wholeNode.remove(it)
-                                }
-                            }
-                        }
-                    } else {
-                        throw GroovyCastException("in the file ${maybeResourceFile.path}, ${it.toString()} cannot cast Node")
+            wholeNode?.run {
+                children().filterIsInstance<Node>().filter { it.name() != null }.forEach { node ->
+                    val hashSet: HashSet<String?>? = mMainValuesMap[node.name()]
+                    if (hashSet?.contains(node.attribute("name")) == true) {
+                        removeCount += 1
+                        remove(node)
                     }
                 }
             }
             if (removeCount > 0) {
                 try {
-                    Files.asCharSink(maybeResourceFile, Charsets.UTF_8).write(XmlUtil.serialize(wholeNode))
+                    Files.asCharSink(file, Charsets.UTF_8).write(XmlUtil.serialize(wholeNode))
                 } catch (e: IOException) {
-                    e.printStackTrace()
+                    LogUtils.logError(e.message)
                 }
             }
         }

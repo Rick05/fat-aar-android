@@ -1,7 +1,6 @@
 package com.rick.fataar
 
 import com.android.build.gradle.LibraryExtension
-import com.android.build.gradle.api.LibraryVariant
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -10,16 +9,18 @@ import org.gradle.api.Project
  * Author: 嘿嘿抛物线
  * Date  : 5/16/21
  * Email : easygoingrickking@gmail.com
- * Desc  : 无
+ * Desc  : 插件
  */
 class FatAarPluginKt : Plugin<Project> {
 
     private var mProject: Project? = null
 
     override fun apply(project: Project) {
+        // 引用第三方的fataar插件
         project.pluginManager.apply("com.kezong.fat-aar")
+
         mProject = project
-        FatUtils.attach(project)
+        LogUtils.attach(project)
 
         val duplicateResHandler = DuplicateResHandler(project)
         project.afterEvaluate {
@@ -34,7 +35,6 @@ class FatAarPluginKt : Plugin<Project> {
                 // 创建一个task，处理重复资源
                 val dealDuplicateResTask = tasks.register("DealDuplicateResTask" + variant.name) { task ->
                     task.doLast {
-                        FatUtils.logAnytime("dealDuplicateResTask doLast")
                         duplicateResHandler?.deleteDuplicate(variant);
                     }
                 }

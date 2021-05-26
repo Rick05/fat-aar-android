@@ -6,20 +6,22 @@ import org.gradle.api.Project
  * Author: 嘿嘿抛物线
  * Date  : 5/16/21
  * Email : easygoingrickking@gmail.com
- * Desc  : 无
+ * Desc  : 日志工具类
  */
-internal object FatUtils {
+internal object LogUtils{
+
     private var sProject: Project? = null
+
     fun attach(p: Project?) {
         sProject = p
     }
 
     fun logError(msg: String?) {
-        sProject!!.logger.error("[fat-aar]$msg")
+        sProject?.logger?.error("[fat-aar]$msg")
     }
 
     fun logInfo(msg: String?) {
-        sProject!!.logger.info("[fat-aar]$msg")
+        sProject?.logger?.info("[fat-aar]$msg")
     }
 
     fun logAnytime(msg: String?) {

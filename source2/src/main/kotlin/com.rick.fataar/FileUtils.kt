@@ -4,9 +4,10 @@ import java.io.File
 import java.util.*
 
 /**
- * @author Tomze
- * @time 2021年03月26日 12:59
- * @desc
+ * Author: 嘿嘿抛物线
+ * Date  : 5/16/21
+ * Email : easygoingrickking@gmail.com
+ * Desc  : 文件操作工具类
  */
 object FileUtils {
     /**
